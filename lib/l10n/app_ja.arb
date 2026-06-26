@@ -1,0 +1,58 @@
+{
+  "@@locale": "ja",
+
+  "appName": "SYADOW",
+  "appTagline": "ゴルフ パフォーマンス トラッキング",
+
+  "signIn": "ログイン",
+  "signingIn": "ログイン中...",
+  "signUp": "新規登録",
+  "signingUp": "登録中...",
+  "createAccount": "アカウントを作成",
+
+  "email": "メールアドレス",
+  "password": "パスワード",
+  "passwordHint": "パスワード (6文字以上)",
+  "name": "お名前",
+  "forgotPassword": "パスワードをお忘れですか?",
+  "orDivider": "または",
+  "continueWithApple": "Appleで続ける",
+  "continueWithGoogle": "Googleで続ける",
+  "noAccountQuestion": "アカウントをお持ちでない方",
+  "comingSoon": "近日対応予定",
+
+  "validatorEmailRequired": "メールアドレスを入力してください",
+  "validatorEmailInvalid": "メールアドレスの形式が正しくありません",
+  "validatorPasswordRequired": "パスワードを入力してください",
+  "validatorPasswordTooShort": "6文字以上で入力してください",
+  "validatorNameRequired": "お名前を入力してください",
+
+  "signupTitle": "SYADOW に参加",
+  "signupSubtitle": "ロールを選んでアカウントを作成",
+  "sectionRole": "ロール",
+  "sectionAccount": "アカウント情報",
+  "rolePlayer": "プレーヤー",
+  "rolePlayerDesc": "ラウンド記録とコーチング",
+  "roleCoach": "コーチ",
+  "roleCoachDesc": "スイング・戦略コーチング",
+  "roleFitter": "フィッター",
+  "roleFitterDesc": "クラブフィッティング",
+  "roleTrainer": "トレーナー",
+  "roleTrainerDesc": "フィジカルトレーニング",
+  "termsNotice": "登録すると{terms}および{privacy}に同意したものとみなされます。",
+  "termsLink": "利用規約",
+  "privacyLink": "プライバシーポリシー",
+
+  "langEnglish": "EN",
+  "langKorean": "KO",
+
+  "signOut": "ログアウト",
+  "errorInvalidEmail": "メールアドレスの形式が正しくありません",
+  "errorUserNotFound": "このメールで登録されたアカウントはありません",
+  "errorWrongPassword": "パスワードが違います",
+  "errorInvalidCredentials": "メールまたはパスワードが違います",
+  "errorEmailInUse": "このメールはすでに登録されています",
+  "errorWeakPassword": "パスワードが脆弱です",
+  "errorNetwork": "ネットワークエラー。もう一度お試しください。",
+  "errorUnknown": "問題が発生しました。もう一度お試しください。"
+}

@@ -1,0 +1,64 @@
+{
+  "@@locale": "en",
+
+  "appName": "SYADOW",
+  "appTagline": "Golf Performance Tracking",
+
+  "signIn": "Sign In",
+  "signingIn": "Signing in...",
+  "signUp": "Sign Up",
+  "signingUp": "Creating account...",
+  "createAccount": "Create Account",
+
+  "email": "Email",
+  "password": "Password",
+  "passwordHint": "Password (6+ characters)",
+  "name": "Name",
+  "forgotPassword": "Forgot password?",
+  "orDivider": "or",
+  "continueWithApple": "Continue with Apple",
+  "continueWithGoogle": "Continue with Google",
+  "noAccountQuestion": "Don't have an account?",
+  "comingSoon": "Coming soon",
+
+  "validatorEmailRequired": "Please enter your email",
+  "validatorEmailInvalid": "Invalid email format",
+  "validatorPasswordRequired": "Please enter your password",
+  "validatorPasswordTooShort": "Must be at least 6 characters",
+  "validatorNameRequired": "Please enter your name",
+
+  "signupTitle": "Join SYADOW",
+  "signupSubtitle": "Pick your role and create an account",
+  "sectionRole": "Role",
+  "sectionAccount": "Account",
+  "rolePlayer": "Player",
+  "rolePlayerDesc": "Track rounds & get coached",
+  "roleCoach": "Coach",
+  "roleCoachDesc": "Swing & strategy coaching",
+  "roleFitter": "Fitter",
+  "roleFitterDesc": "Club fitting specialist",
+  "roleTrainer": "Trainer",
+  "roleTrainerDesc": "Physical training",
+  "termsNotice": "By signing up you agree to our {terms} and {privacy}.",
+  "@termsNotice": {
+    "placeholders": {
+      "terms": {"type": "String"},
+      "privacy": {"type": "String"}
+    }
+  },
+  "termsLink": "Terms of Service",
+  "privacyLink": "Privacy Policy",
+
+  "langEnglish": "EN",
+  "langKorean": "KO",
+
+  "signOut": "Sign Out",
+  "errorInvalidEmail": "Invalid email address",
+  "errorUserNotFound": "No account found with this email",
+  "errorWrongPassword": "Incorrect password",
+  "errorInvalidCredentials": "Invalid email or password",
+  "errorEmailInUse": "This email is already registered",
+  "errorWeakPassword": "Password is too weak",
+  "errorNetwork": "Network error. Please try again.",
+  "errorUnknown": "Something went wrong. Please try again."
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "137444359015",
+    "project_id": "syadow-pro",
+    "storage_bucket": "syadow-pro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:137444359015:android:a9a5218b84b1ae31da8dc2",
+        "android_client_info": {
+          "package_name": "com.syadow.syadow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrKz7FBt-7WVsGlZe0MvmsZh1lDrLeEhg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
