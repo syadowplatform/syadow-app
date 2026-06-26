@@ -446,36 +446,69 @@ flutter pub add google_fonts  # → google_fonts 8.1.0
 
 ---
 
-## 📋 다음 세션 시작 시 할 일 (Phase 5 + Git)
+## 2026-06-26 — Git 저장소 초기화 + GitHub 연결 완료 🎉
 
-### 🔴 우선순위 1 — Git 저장소 초기화 + GitHub 연결
-**현재 상태**: 로컬에 코드만 있고 git 저장소 없음. 분실 위험 큼.
+### 결과
+- ✅ `git init -b main` → 로컬 저장소 생성
+- ✅ 첫 커밋: `"Initial commit: Phase 0-4 complete (Firebase auth, i18n, home mockup, app icon)"` (132 파일)
+- ✅ Remote: **`https://github.com/syadowplatform/syadow-app.git`** (Private)
+- ✅ `git push -u origin main` 성공 → `main` 트래킹 설정됨
+- ✅ GitHub Org: `syadowplatform` (기존 계정에 신규 private repo)
 
+### `.gitignore` 보강 내역
+Flutter 3.44 기본 `.gitignore`에 누락된 표준 항목 추가:
+- `android/local.properties` — **로컬 SDK 경로 (`/opt/homebrew/share/flutter`) 누출 방지 핵심**
+- `android/.gradle/`, `android/captures/`, `android/key.properties`
+- `ios/Pods/`, `ios/.symlinks/`, `ios/Flutter/Generated.xcconfig` (로컬 경로 포함됨)
+- `ios/Flutter/ephemeral/`, `flutter_export_environment.sh`
+- `ios/Flutter/App.framework`, `Flutter.framework`, `Flutter.podspec`
+- `**/GeneratedPluginRegistrant.*`, `**/Pods/`, `.DS_Store`
+
+### 커밋된 민감/공개 파일 정책
+- ✅ **커밋함** (Private repo이므로 OK):
+  - `lib/firebase_options.dart` — Firebase 식별자 (어차피 클라이언트 노출됨)
+  - `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist` — 동일 사유
+- 🚫 **커밋 안 함**:
+  - 머신별 로컬 경로 파일 (`local.properties`, `Generated.xcconfig`)
+  - 빌드 산출물 (`build/`, `.dart_tool/`, `Pods/`)
+  - IDE 메타 (`.idea/`, `*.iml`)
+
+### 일상 사용 흐름 (앞으로)
 ```bash
-cd ~/syadow-app/syadow
-git init
 git add .
-git commit -m "Initial commit: Phase 0-4 complete (auth, i18n, home mockup, app icon)"
-# GitHub private repo 생성 후
-git remote add origin git@github.com:<USER>/syadow-app.git
-git branch -M main
-git push -u origin main
+git commit -m "메시지"
+git push
 ```
 
-⚠️ `.gitignore` 확인 필요 — `ios/Pods/`, `build/`, `.dart_tool/`, `*.iml`, `firebase_options.dart`(?) 등이 무시되는지. Flutter 기본 .gitignore가 거의 다 처리해줌.
+### 트러블슈팅
+- 없음. SSH 키 이슈 회피 차원에서 HTTPS URL 사용. 추후 push 시 자격증명 만료되면 GitHub PAT(개인 액세스 토큰) 또는 SSH 키로 전환 권장.
 
-### 🟡 우선순위 2 — Firebase Console 사전 설정 (사용자가 직접)
-1. Authentication → Sign-in method → Email/Password 활성화
-2. Firestore Database → Rules에 `users/{uid}` 규칙 추가 (위 entry 참조)
+---
+
+## 📋 다음 세션 시작 시 할 일 (Phase 5)
+
+### 🔴 우선순위 1 — Firebase Console 사전 설정 (사용자가 직접)
+1. Authentication → Sign-in method → **Email/Password 활성화**
+2. Firestore Database → Rules에 `users/{uid}` 규칙 추가:
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{db}/documents {
+       match /users/{uid} {
+         allow read, write: if request.auth != null && request.auth.uid == uid;
+       }
+     }
+   }
+   ```
 3. 시뮬레이터에서 실제 가입 → 로그인 → 로그아웃 흐름 검증
 
-### 🟢 Phase 5 — 메인 화면 Firestore 연결
+### 🟡 우선순위 2 — Phase 5: 메인 화면 Firestore 연결
 - 현재 `player_home_screen.dart`는 하드코딩 mockup
 - `lib/features/player/data/` 만들고 Firestore `rounds/`, `metrics/` 스트림 연결
 - `currentUserProvider`로 로그인된 user uid 가져와서 본인 데이터만 쿼리
 - Riverpod `StreamProvider`로 실시간 업데이트
 
-### Phase 5 이후 — 화면 포팅 시작
+### 🟢 Phase 5 이후 — 화면 포팅 시작
 - 로그인 → Dashboard → Player Input 순으로 단순한 것부터
 - 웹 [pages/](../../haru-syadow-platform/pages/) 의 HTML/JS 로직을 Dart로 옮김
 - Firestore 컬렉션 구조는 **그대로** (앱/웹 데이터 100% 호환 목표)
