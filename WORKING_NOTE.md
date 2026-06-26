@@ -485,28 +485,100 @@ git push
 
 ---
 
-## 📋 다음 세션 시작 시 할 일 (Phase 5)
+## 2026-06-26 (오후) — 웹 Firestore 스키마 동기화 + iOS 빌드 재정비 🎉
 
-### 🔴 우선순위 1 — Firebase Console 사전 설정 (사용자가 직접)
-1. Authentication → Sign-in method → **Email/Password 활성화**
-2. Firestore Database → Rules에 `users/{uid}` 규칙 추가:
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{db}/documents {
-       match /users/{uid} {
-         allow read, write: if request.auth != null && request.auth.uid == uid;
-       }
-     }
-   }
-   ```
-3. 시뮬레이터에서 실제 가입 → 로그인 → 로그아웃 흐름 검증
+> "결국 웹 사용자가 앱으로 옮겨올 거니까 처음부터 같은 Firebase 공유" 라는 사용자 결정에 따라, 앱의 가입 로직을 웹 스키마에 100% 맞춤.
 
-### 🟡 우선순위 2 — Phase 5: 메인 화면 Firestore 연결
-- 현재 `player_home_screen.dart`는 하드코딩 mockup
-- `lib/features/player/data/` 만들고 Firestore `rounds/`, `metrics/` 스트림 연결
-- `currentUserProvider`로 로그인된 user uid 가져와서 본인 데이터만 쿼리
+### 1. 발견 — 웹 Firestore Rules가 `sy_code` 강제
+사용자가 Firebase Console에서 복사해준 기존 Rules 분석 결과:
+- `users/{userId}` create 시 **`sy_code` 필드 필수**, 패턴 `^SY-[PCF]-[0-9A-Z]{6}$` 매칭 강제
+- `sy_code`는 immutable (update 시 변경 불가)
+- 인증된 사용자는 다른 유저 프로필을 read 가능 (Connection 화면용)
+- 추가로 `connection_requests`, `accepted_connections`, `coach_lessons`, `player_rounds`, `fitter_club_setups`, `trial_history` 등 도메인별 정밀 rule 다수
+
+**문제**: 앱의 [auth_service.dart](lib/shared/services/auth_service.dart)는 `{email, name, role, createdAt}` 만 썼음 → `sy_code` 없어서 가입 시 PERMISSION_DENIED 발생할 상태.
+
+### 2. 웹 가입 로직 분석
+[~/haru-syadow-platform/pages/signup.js](/Users/harumoon/haru-syadow-platform/pages/signup.js) 의 `roleToPrefix` + `randomSix` + Firestore write 로직 정독:
+- sy_code 생성: `"SY-" + (P|C|F) + 6자리 랜덤(0-9A-Z)`
+- `Math.random()` 사용, 중복체크 없음 (충돌 확률 21억분의 1)
+- 풀 user doc 스키마: `{uid, role, email, sy_code, profileCompleted, profile{firstName,lastName,fullName,playingName,birth,country,gender,phone,phoneCountryCode,phoneNumber}, lang, consents, trial, createdAt}`
+
+### 3. 작성/수정한 코드
+- [lib/shared/utils/sy_code.dart](lib/shared/utils/sy_code.dart) **신규** — 웹 `roleToPrefix` + `randomSix` 그대로 Dart 이식
+  - `SyCode.prefix(UserRole)` → `P`/`C`/`F`/`T` (Trainer는 `T`)
+  - `SyCode.generate(UserRole)` → `SY-X-XXXXXX`
+- [lib/shared/services/auth_service.dart](lib/shared/services/auth_service.dart) — `signUp`을 웹 호환 스키마로 변경
+  - `uid`, `sy_code`, `profileCompleted: false`, `profile{}` (minimal, 빈 문자열), `lang: 'en'`, `createdAt` (ISO 문자열)
+  - 앱이 birth/country/phone/gender를 아직 안 받으므로 profile 필드는 빈값 + `fullName`만 채움
+  - `trial`, `consents`는 일단 생략 (앱은 동의 화면 아직 없음, 프로필 완성 화면에서 채울 예정)
+  - Firestore 저장 시 `request.auth.uid == userId` 만 확인하므로 안전
+
+### 4. iOS 빌드 재발생 이슈 — Package.swift platform mismatch
+- 증상: `flutter run` 시
+  > Target Integrity (Xcode): The package product 'cloud-firestore' requires minimum platform version 15.0 for the iOS platform, but this target supports 13.0
+- Phase 2에서 `project.pbxproj`의 `IPHONEOS_DEPLOYMENT_TARGET = 15.0`은 그대로 유지돼있었음 (3곳 모두)
+- 진짜 원인: [ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift](ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift) 가 **자동 생성될 때 `.iOS("13.0")` 으로 하드코딩됨**
+- Flutter 3.44 알려진 이슈 — SPM 플러그인 통합 Package에서 platform을 pbxproj 값과 동기화 못 함
+- **해결**: Package.swift의 `.iOS("13.0")` → `.iOS("15.0")` 직접 편집
+- ⚠️ 주의: 이 파일은 `flutter pub get` 또는 `flutter clean` 후 재생성됨. 다음 세션에서 `Package.swift` 다시 13.0으로 돌아갔으면 재수정 필요. 영구 해결은 Flutter 3.45+ 업데이트 또는 [project.pbxproj](ios/Runner.xcodeproj/project.pbxproj)에 SPM platform override 추가.
+
+### 5. 검증 결과
+- ✅ `flutter analyze` → No issues found
+- ✅ `flutter run -d <iPhone17>` → 31.8초 빌드 성공
+- ✅ Dart VM Service 연결, 앱 시뮬레이터 실행 중
+- ⚠️ `Plugin FLTFirebaseAuthPlugin uses deprecated UIScene lifecycle` 경고 — 무시 OK (Firebase 플러그인 업데이트 시 자동 해결)
+- ⏳ **실제 가입 → 로그인 → 로그아웃 검증 미완** (다음 세션)
+
+### 6. Git 작업
+- 커밋 1: `feat(auth): generate sy_code on signup to match web Firestore schema` → push 완료
+- Package.swift 변경분은 의도적으로 미커밋 (ephemeral 디렉토리, .gitignore에 들어있음)
+
+---
+
+## 📋 다음 세션 시작 시 할 일 (Phase 4 마무리 + Phase 5)
+
+### 🔴 우선순위 1 — Firestore Rules에 Trainer 지원 추가 (사용자 직접)
+**상태**: 현재 정규식이 `[PCF]`만 허용. Trainer (`T`) 추가 필수. 영향 라인 3곳:
+
+1. Firebase Console → `syadow-pro` → Firestore Database → **Rules** 탭
+2. `[PCF]` 검색 → 모두 `[PCFT]` 로 변경 (총 3곳: `users/`, `connection_requests/`, `accepted_connections/` × 2줄)
+3. **Publish** 클릭
+
+```diff
+- && request.resource.data.sy_code.matches('^SY-[PCF]-[0-9A-Z]{6}$');
++ && request.resource.data.sy_code.matches('^SY-[PCFT]-[0-9A-Z]{6}$');
+```
+
+⚠️ Player/Coach/Fitter 가입은 Rules 수정 없이도 됨. Trainer 가입만 필수.
+
+### 🟡 우선순위 2 — Authentication Email/Password 활성화 확인
+1. Firebase Console → Authentication → Sign-in method
+2. `Email/Password` 가 Enabled 인지 확인 (웹에서 이미 사용 중이라면 켜져있을 것)
+
+### 🟢 우선순위 3 — 실제 가입 흐름 검증
+1. `flutter run` (시뮬레이터에 이미 떠있을 수도 있음)
+2. `/signup` 화면에서 **Player** 역할로 가입 (`apptest_001@syadow.com`, 비밀번호 6자+)
+3. Player Home으로 자동 이동하면 성공
+4. Firebase Console에서 확인:
+   - Authentication → Users → 새 계정 보이는지
+   - Firestore → `users/{uid}` 도큐먼트에 `sy_code: "SY-P-XXXXXX"` 있는지
+5. 로그아웃 → 재로그인 → 다시 Home 진입까지 확인
+6. 테스트 끝나면 Auth → Users 에서 `apptest_*` 계정 삭제
+
+### 우선순위 4 — Phase 5: Player Home Firestore 연결
+지금까지 동일.
+- `lib/features/player/data/` 만들고 Firestore `player_rounds/`, `calendar_events/` 스트림 연결
+- `currentUserProvider`로 로그인된 uid + 해당 user의 `sy_code` 가져와서 본인 데이터만 쿼리
 - Riverpod `StreamProvider`로 실시간 업데이트
+
+### 우선순위 5 — Package.swift 13.0 회귀 영구 해결
+임시 수정한 `Package.swift`가 재생성되면 다시 빌드 실패. 영구 해결 옵션:
+1. **(권장)** Flutter 3.45+ 업그레이드 시 자동 해결 여부 확인
+2. 또는 Flutter SDK 내부 템플릿에 패치 (비추천 — SDK 업데이트 시 사라짐)
+3. 또는 빌드 pre-script로 자동 sed 변환 추가
+
+---
 
 ### 🟢 Phase 5 이후 — 화면 포팅 시작
 - 로그인 → Dashboard → Player Input 순으로 단순한 것부터
