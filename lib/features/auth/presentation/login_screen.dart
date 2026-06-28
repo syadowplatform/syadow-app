@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/auth_errors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/auth_providers.dart';
@@ -162,9 +162,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: Icons.apple,
                         label: t.continueWithApple,
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(t.comingSoon)),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(t.comingSoon)));
                         },
                       ),
                       const SizedBox(height: 10),
@@ -172,9 +172,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: Icons.g_mobiledata_rounded,
                         label: t.continueWithGoogle,
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(t.comingSoon)),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(t.comingSoon)));
                         },
                       ),
                       const SizedBox(height: 32),
@@ -217,12 +217,11 @@ class _Logo extends StatelessWidget {
         colors: [Color(0xFF8B6B4A), AppColors.rose1, Color(0xFFF4D29F)],
         stops: [0.0, 0.5, 1.0],
       ).createShader(rect),
-      child: Text(
-        'SYADOW',
-        textAlign: TextAlign.center,
-        style: AppTextStyles.brand(
-          size: 44,
-        ).copyWith(color: Colors.white, letterSpacing: 8),
+      blendMode: BlendMode.srcIn,
+      child: SvgPicture.asset(
+        'assets/icon/source_wordmark.svg',
+        width: 240,
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
       ),
     );
   }

@@ -86,7 +86,7 @@
 | 1 | 프로젝트 생성 + iPhone 17 시뮬레이터 빌드 성공 | ✅ **완료** (2026-06-18) | - |
 | 2 | Firebase 연결 + Riverpod/go_router 배선 | ✅ **완료** (2026-06-19) | - |
 | 3 | 디자인 토큰 (색/폰트/테마) 셋업 | ✅ **완료** (2026-06-25) | - |
-| 4 | 인증 화면 (로그인/회원가입) 포팅 | ✅ **완료** (2026-06-25) | - |
+| 4 | 인증 화면 (로그인/회원가입) 포팅 | ✅ **완료** (2026-06-28, 가입/로그인/로그아웃 실 검증 완료) | - |
 | 5 | 메인 화면 (Dashboard) 포팅 | 🟡 진행중 (mockup ✅, Firestore 연결 ⏳) | ~4h |
 | 6 | Player Input 포팅 | ⏳ | ~6h |
 | 7 | Stats 화면 포팅 (차트 라이브러리: `fl_chart` 예정) | ⏳ | ~8h |
@@ -536,47 +536,168 @@ git push
 
 ---
 
-## 📋 다음 세션 시작 시 할 일 (Phase 4 마무리 + Phase 5)
+---
 
-### 🔴 우선순위 1 — Firestore Rules에 Trainer 지원 추가 (사용자 직접)
-**상태**: 현재 정규식이 `[PCF]`만 허용. Trainer (`T`) 추가 필수. 영향 라인 3곳:
+## 2026-06-28 — Phase 4 완전 종료 🎉 (Trainer 지원 추가 + 가입 흐름 실 검증)
 
-1. Firebase Console → `syadow-pro` → Firestore Database → **Rules** 탭
-2. `[PCF]` 검색 → 모두 `[PCFT]` 로 변경 (총 3곳: `users/`, `connection_requests/`, `accepted_connections/` × 2줄)
-3. **Publish** 클릭
+### 1. Firestore Rules에 Trainer (`T`) 패턴 추가
+**배경**: 웹은 P/C/F만 사용하지만 Trainer는 앱부터 시작이 정책 (워킹노트 정책 그대로). Rules는 프로젝트당 1개라서 웹/앱 공유 — 추가해도 웹에 영향 없음.
 
-```diff
-- && request.resource.data.sy_code.matches('^SY-[PCF]-[0-9A-Z]{6}$');
-+ && request.resource.data.sy_code.matches('^SY-[PCFT]-[0-9A-Z]{6}$');
+수정 파일: [~/haru-syadow-platform/firestore.rules](../../haru-syadow-platform/firestore.rules) — `[PCF]` → `[PCFT]` **4곳**:
+- line 11: `users/create` — `sy_code`
+- line 34: `connection_requests/create` — `targetSyCode`
+- line 78: `accepted_connections/create` — `requesterSyCode`
+- line 79: `accepted_connections/create` — `targetSyCode`
+
+⚠️ 워킹노트 원래 "3곳"이라 했는데 실제 4곳. accepted_connections에 2번 들어있음.
+
+배포:
+```bash
+cd ~/haru-syadow-platform && firebase deploy --only firestore:rules
+# → ✔ released rules firestore.rules to cloud.firestore
+```
+웹 레포에 커밋 `feat(rules): allow Trainer (T) sy_code pattern for app` push 완료.
+
+### 2. Package.swift 13.0 회귀 재발 (예고된 이슈)
+**증상**: `flutter run` 시 `Missing package product 'cloud-firestore'` 외 7개 — SPM 패키지 해결 실패
+
+**원인 진단**:
+- `ios/Flutter/ephemeral/.packages/` 디렉토리 자체가 없음 (Flutter 빌드 시점에 생성됨)
+- `ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift`가 `.iOS("13.0")`으로 다시 생성됨 (지난 세션에서 15.0으로 패치한 게 회귀)
+
+**해결 절차** (다음에도 동일하게 적용):
+```bash
+cd ~/syadow-app/syadow
+flutter clean && flutter pub get   # ephemeral 재생성
+sed -i '' 's/.iOS("13.0")/.iOS("15.0")/g' ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+flutter build ios --simulator --debug   # 48초 소요, .packages 생성됨
+xcrun simctl install booted build/ios/iphonesimulator/Runner.app
+xcrun simctl launch booted com.syadow.syadow
 ```
 
-⚠️ Player/Coach/Fitter 가입은 Rules 수정 없이도 됨. Trainer 가입만 필수.
+⚠️ **`flutter run`을 바로 쓰면 Package.swift가 13.0 상태로 빌드 시도 → 실패**. 반드시 pub get → sed → build ios 순서.
 
-### 🟡 우선순위 2 — Authentication Email/Password 활성화 확인
-1. Firebase Console → Authentication → Sign-in method
-2. `Email/Password` 가 Enabled 인지 확인 (웹에서 이미 사용 중이라면 켜져있을 것)
+### 3. Trainer 가입 실 검증 ✅
+- `apptest_trainer@syadow.com` / `test1234` / **Trainer** 역할로 가입
+- Firebase Console:
+  - Authentication → Users에 계정 생성 확인
+  - Firestore `users/{uid}`에 `sy_code: "SY-T-XXXXXX"` 확인
+- 로그아웃 → 재로그인 → Home 진입 흐름 정상
 
-### 🟢 우선순위 3 — 실제 가입 흐름 검증
-1. `flutter run` (시뮬레이터에 이미 떠있을 수도 있음)
-2. `/signup` 화면에서 **Player** 역할로 가입 (`apptest_001@syadow.com`, 비밀번호 6자+)
-3. Player Home으로 자동 이동하면 성공
-4. Firebase Console에서 확인:
-   - Authentication → Users → 새 계정 보이는지
-   - Firestore → `users/{uid}` 도큐먼트에 `sy_code: "SY-P-XXXXXX"` 있는지
-5. 로그아웃 → 재로그인 → 다시 Home 진입까지 확인
-6. 테스트 끝나면 Auth → Users 에서 `apptest_*` 계정 삭제
+### 4. 미정리 (사용자 직접 진행)
+- **테스트 계정 정리**: Firebase Console → Authentication → Users에서 `apptest_*` 계정 삭제 권장 (놔둬도 무방)
 
-### 우선순위 4 — Phase 5: Player Home Firestore 연결
-지금까지 동일.
-- `lib/features/player/data/` 만들고 Firestore `player_rounds/`, `calendar_events/` 스트림 연결
-- `currentUserProvider`로 로그인된 uid + 해당 user의 `sy_code` 가져와서 본인 데이터만 쿼리
-- Riverpod `StreamProvider`로 실시간 업데이트
+### 다음 (Phase 5 — Player Home Firestore 연결)
+1. `lib/features/player/data/` 폴더 생성
+2. `currentUserProvider` (현재 로그인 user + `sy_code` 노출) 추가
+3. Firestore `player_rounds/`, `calendar_events/` 스트림 `StreamProvider`로 연결
+4. Player Home mockup의 하드코딩 데이터를 실데이터로 교체
 
-### 우선순위 5 — Package.swift 13.0 회귀 영구 해결
-임시 수정한 `Package.swift`가 재생성되면 다시 빌드 실패. 영구 해결 옵션:
+---
+
+## 2026-06-28 (오후) — Splash 화면 + SVG 워드마크 도입 🎨
+
+> "앱 들어가면 SYADOW가 떠 있는 로딩 화면이 있으면 좋겠다" 요청에서 출발해, 스플래시 디자인과 진짜 워드마크 SVG 적용까지.
+
+### 1. flutter_svg 패키지 + 에셋 등록
+- `flutter pub add flutter_svg` → flutter_svg 2.x (+ vector_graphics 등)
+- [pubspec.yaml](pubspec.yaml)에 `flutter.assets: - assets/icon/` 추가
+
+### 2. 진짜 SYADOW 워드마크 SVG 발견 및 채택
+**기존 문제**: 모든 SYADOW 표시가 Orbitron 폰트 텍스트로 그려지고 있었음. 사용자가 직접 디자인한 진짜 워드마크가 따로 있음.
+- 정본: [assets/icon/source_wordmark.svg](assets/icon/source_wordmark.svg) (path 기반, viewBox 397.63×69.29, fill `#D4A373`)
+- 웹 레포에도 동일 파일 존재: `~/haru-syadow-platform/assets/SYADOW.svg`
+
+### 3. SplashScreen 신규 작성
+파일: [lib/features/auth/presentation/splash_screen.dart](lib/features/auth/presentation/splash_screen.dart)
+
+**디자인 결정 (사용자 지시 → 반영)**:
+- 배경: `#050813` (가장 짙은 남색, `AppColors.bg0`)
+- 워드마크: SVG 사용 (가로 260px)
+- **shimmer reveal 효과**: 골드 빛이 좌→우로 1회 가로지르며 글자가 "차곡차곡" 켜짐
+  - 빛이 지나간 부분 = 베이스 골드 `#D4A373`로 유지
+  - 빛 정점 = `#FFE9C8` (밝은 골드 하이라이트)
+  - 아직 안 닿은 부분 = 배경색에 묻힘
+- shimmer 종료 후 hold 구간 (~0.7s) 동안 풀 워드마크 유지 → 다음 화면 전환
+
+**구현 포인트**:
+- `AnimationController.forward()` 1회만 (repeat 안 함)
+- `LinearGradient` stops를 `t-halfBand / t / t+halfBand`로 동적 계산
+- `ShaderMask(blendMode: srcIn)` + `SvgPicture.asset` 조합 — SVG path가 마스크 모양으로 잘려서 그라데이션이 입혀짐
+- SVG는 `colorFilter: ColorFilter.mode(Colors.white, srcIn)`으로 색을 흰색으로 강제
+
+**조정 가능한 상수** (파일 상단):
+```dart
+static const Duration _splashDuration = Duration(milliseconds: 2200);  // 전체 노출
+static const Duration _shimmerDuration = Duration(milliseconds: 1500); // 빛 통과 시간
+static const double _wordmarkWidth = 260;
+const halfBand = 0.08;  // 빛 좌우 폭
+```
+
+**Auth-aware 분기**:
+- `Future.wait([Future.delayed(_splashDuration), ref.read(authStateProvider.future)])`
+- 둘 다 끝나면 user 유무에 따라 `/home` 또는 `/login`으로 `context.go`
+
+### 4. 라우터 수정
+[lib/core/router/app_router.dart](lib/core/router/app_router.dart):
+- `initialLocation: '/login'` → `'/'`
+- `GoRoute('/', SplashScreen)` 추가
+- redirect 첫 줄에 `if (loc == '/') return null;` — splash는 자체 분기
+
+### 5. 로그인 화면 _Logo 위젯 SVG 교체
+[lib/features/auth/presentation/login_screen.dart](lib/features/auth/presentation/login_screen.dart):
+- Orbitron 텍스트 "SYADOW" → `SvgPicture.asset(width: 240)` + 동일 그라데이션(`#8B6B4A → rose1 → #F4D29F`) ShaderMask
+- `app_text_styles.dart` import 제거 (더 이상 미사용)
+
+### 6. iOS 빌드 — Package.swift 13.0 회귀 패치
+또 재발. 워킹노트의 워크어라운드 그대로 적용:
+```bash
+sed -i '' 's/.iOS("13.0")/.iOS("15.0")/g' ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+flutter build ios --simulator --debug
+xcrun simctl uninstall booted com.syadow.syadow
+xcrun simctl install booted build/ios/iphonesimulator/Runner.app
+xcrun simctl launch booted com.syadow.syadow
+```
+
+### 7. 검증
+- ✅ 시뮬레이터에서 splash → 로그인 화면 전환 시각 확인
+- ✅ shimmer 1회 통과 + hold + 자동 분기 정상
+- ✅ 로그인 화면의 워드마크가 진짜 SVG로 표시됨
+
+### 트러블슈팅 기록 — 디자인 협업 흐름
+- 초기에 디자인 듣기 전 임의로 splash를 만들었다가 사용자가 "직접 지시할게"라고 함 → 변경분 5개 파일 `git checkout`으로 원복 후 처음부터 재진행.
+- **교훈**: 디자인 요청은 사용자 지시를 끝까지 듣고 시작. 임의 구현 X.
+
+---
+
+## 📋 다음 세션 시작 시 할 일 (Phase 5)
+
+### 🔴 우선순위 1 — Phase 5: Player Home Firestore 연결 (메인 코딩)
+- `lib/features/player/data/` 폴더 생성
+- `currentUserProvider` (현재 로그인 user + `sy_code` 노출) 추가
+- Firestore `player_rounds/`, `calendar_events/` 스트림 `StreamProvider`로 연결
+- Player Home mockup의 하드코딩 데이터를 실데이터로 교체
+- 로그인된 uid + 해당 user의 `sy_code` 기준으로 본인 데이터만 쿼리
+
+### 🟡 우선순위 2 — 테스트 계정 정리 (선택, 사용자 직접)
+Firebase Console → Authentication → Users에서 `apptest_*` 계정 삭제. 안 지워도 동작엔 영향 없음.
+
+### 🟢 우선순위 3 — Package.swift 13.0 회귀 영구 해결 (선택)
+임시 수정한 `Package.swift`가 `flutter clean`/`pub get` 후 재생성되며 13.0으로 회귀. 영구 해결 옵션:
 1. **(권장)** Flutter 3.45+ 업그레이드 시 자동 해결 여부 확인
-2. 또는 Flutter SDK 내부 템플릿에 패치 (비추천 — SDK 업데이트 시 사라짐)
-3. 또는 빌드 pre-script로 자동 sed 변환 추가
+2. 빌드 pre-script로 자동 sed 변환 추가 (`ios/Podfile` post_install 또는 별도 스크립트)
+3. Flutter SDK 내부 템플릿에 패치 (비추천 — SDK 업데이트 시 사라짐)
+
+**임시 워크어라운드** (회귀 발생 시 반드시 이 순서):
+```bash
+cd ~/syadow-app/syadow
+flutter clean && flutter pub get
+sed -i '' 's/.iOS("13.0")/.iOS("15.0")/g' ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+flutter build ios --simulator --debug
+xcrun simctl install booted build/ios/iphonesimulator/Runner.app
+xcrun simctl launch booted com.syadow.syadow
+```
+⚠️ `flutter run`을 바로 쓰면 13.0 상태로 빌드 시도 → 실패. 위 순서 엄수.
 
 ---
 
