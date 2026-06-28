@@ -86,15 +86,21 @@
 | 1 | 프로젝트 생성 + iPhone 17 시뮬레이터 빌드 성공 | ✅ **완료** (2026-06-18) | - |
 | 2 | Firebase 연결 + Riverpod/go_router 배선 | ✅ **완료** (2026-06-19) | - |
 | 3 | 디자인 토큰 (색/폰트/테마) 셋업 | ✅ **완료** (2026-06-25) | - |
-| 4 | 인증 화면 (로그인/회원가입) 포팅 | ✅ **완료** (2026-06-28, 가입/로그인/로그아웃 실 검증 완료) | - |
-| 5 | 메인 화면 (Dashboard) 포팅 | 🟡 진행중 (mockup ✅, Firestore 연결 ⏳) | ~4h |
-| 6 | Player Input 포팅 | ⏳ | ~6h |
-| 7 | Stats 화면 포팅 (차트 라이브러리: `fl_chart` 예정) | ⏳ | ~8h |
-| 8 | Chat 화면 포팅 (서버 `analysis.py` 그대로 호출) | ⏳ | ~3h |
-| 9 | Coach/Fitter 화면 포팅 | ⏳ | ~10h |
-| 10 | Trainer 역할 신규 구현 | ⏳ | ~6h |
-| 11 | GPS 자동입력 + 카메라 녹화/업로드 + 푸시 알림 | ⏳ | ~6h |
-| 12 | TestFlight 베타 → App Store / Play Store 제출 | ⏳ | ~?? |
+| 4 | 인증 화면 (로그인/회원가입) 포팅 + 실 검증 | ✅ **완료** (2026-06-28) | - |
+| 4.5 | Splash 화면 + 진짜 SVG 워드마크 도입 | ✅ **완료** (2026-06-28) | - |
+| **5** | **UI 일괄 (mockup)**: Dashboard / Player Input / Stats / Chat / Coach / Fitter / Trainer 화면을 mock 데이터로 디자인까지 완성 | 🟡 진행 예정 (현 위치) | ~20h |
+| **6** | **데이터 모델 정의**: Firestore 스키마 그대로 Dart 모델 클래스 (`PlayerRound`, `CalendarEvent`, `CoachLesson`, ...) | ⏳ | ~3h |
+| **7** | **Firestore Repository 일괄 배선**: `currentUserProvider`, 각 도메인 `StreamProvider` → 화면의 mock 데이터를 `ref.watch()` 결과로 교체 | ⏳ | ~6h |
+| 8 | 디바이스 기능: GPS 자동입력 + 카메라 녹화/업로드 + 푸시 알림 | ⏳ | ~6h |
+| 9 | TestFlight 베타 → App Store / Play Store 제출 | ⏳ | ~?? |
+
+> **전략 변경 (2026-06-28)**: 화면별로 mockup→연결을 1세트씩 가는 대신, **UI를 먼저 일괄로 끝내고 데이터 레이어를 한 번에 배선**.
+> 이유:
+> - Firestore 스키마가 웹과 100% 공유돼서 데이터 리스크가 거의 없음. 디자인/UX 리스크가 훨씬 큼
+> - 화면을 한 번에 만들면 공용 위젯·디자인 톤 통일성 잘 잡힘
+> - 빠른 hot reload 루프로 디자인 반복이 효율적
+>
+> **핵심 비결**: mockup 데이터를 화면에 하드코딩하지 말고 `lib/features/{feature}/data/mock_*_repository.dart`로 분리하고, **모델 클래스는 처음부터 실제 Firestore 스키마 그대로** 정의. 그러면 Phase 7의 교체가 trivial해짐.
 
 ---
 
@@ -670,19 +676,37 @@ xcrun simctl launch booted com.syadow.syadow
 
 ---
 
-## 📋 다음 세션 시작 시 할 일 (Phase 5)
+## 📋 다음 세션 시작 시 할 일 (Phase 5 — UI 일괄)
 
-### 🔴 우선순위 1 — Phase 5: Player Home Firestore 연결 (메인 코딩)
-- `lib/features/player/data/` 폴더 생성
-- `currentUserProvider` (현재 로그인 user + `sy_code` 노출) 추가
-- Firestore `player_rounds/`, `calendar_events/` 스트림 `StreamProvider`로 연결
-- Player Home mockup의 하드코딩 데이터를 실데이터로 교체
-- 로그인된 uid + 해당 user의 `sy_code` 기준으로 본인 데이터만 쿼리
+### 🔴 우선순위 1 — UI-first 전략으로 화면 일괄 작성
+웹 [pages/](../../haru-syadow-platform/pages/) 의 HTML/JS 디자인을 참조해서 다음 화면들을 mock 데이터로 디자인 완성:
 
-### 🟡 우선순위 2 — 테스트 계정 정리 (선택, 사용자 직접)
+| 순서 | 화면 | 웹 참조 | 비고 |
+|---|---|---|---|
+| 1 | Player Home (Dashboard) | `pages/player.html` | 일부 mockup 이미 있음, 정리 필요 |
+| 2 | Player Input (라운드 입력) | `pages/player-input.html` | |
+| 3 | Player Stats | `pages/player-stats.html` | `fl_chart` 사용 |
+| 4 | Player Chat (AI 분석) | `pages/player-chat.html` | UI만, 서버 호출은 Phase 7 |
+| 5 | Coach Home + Input | `pages/coach.html`, `pages/coach-input.html` | |
+| 6 | Fitter Home + Input | `pages/fitter.html`, `pages/fitter-input.html` | |
+| 7 | Trainer Home + Input | (신규, Fitter 복사판 + 운동 메뉴) | 🆕 앱부터 시작 |
+| 8 | Connections (연결 관리) | `pages/connections.html` | |
+| 9 | Profile / Settings | `pages/profile.html`, `pages/settings.html` | locale 영구 저장도 여기서 |
+
+### 🟡 우선순위 2 — 작업 규칙 (Phase 7 연결을 trivial하게 만들기 위함)
+1. **모델 클래스 먼저**: 각 화면에서 쓰는 데이터는 반드시 Dart 모델 클래스 (`PlayerRound`, `CalendarEvent` 등)로 받음. 화면에 raw Map 하드코딩 X.
+   - 모델은 처음부터 **실제 Firestore 스키마 그대로** 정의 (필드명/타입 동일)
+   - 위치: `lib/features/{feature}/domain/{model}.dart`
+2. **mockup 데이터 분리**: `lib/features/{feature}/data/mock_{xxx}_repository.dart`에 모음. 화면 안에 const list 하드코딩 X.
+   - 인터페이스 (`abstract class XxxRepository`)를 먼저 정의해두면 Phase 7에서 `FirestoreXxxRepository`로 교체만 하면 됨
+3. **공용 위젯 적극 추출**: 두 번째 화면 만들 때 반복되는 패턴은 즉시 `lib/shared/widgets/`로 빼기
+4. **디자인 토큰만 사용**: `AppColors.*`, `AppTextStyles.*` 외 직접 hex/font 쓰지 말 것
+5. **i18n 키 추가는 그때그때**: `app_en.arb` → 한국어/일본어 동시에 채움
+
+### 🟢 우선순위 3 — 테스트 계정 정리 (선택, 사용자 직접)
 Firebase Console → Authentication → Users에서 `apptest_*` 계정 삭제. 안 지워도 동작엔 영향 없음.
 
-### 🟢 우선순위 3 — Package.swift 13.0 회귀 영구 해결 (선택)
+### 🟢 우선순위 4 — Package.swift 13.0 회귀 영구 해결 (선택)
 임시 수정한 `Package.swift`가 `flutter clean`/`pub get` 후 재생성되며 13.0으로 회귀. 영구 해결 옵션:
 1. **(권장)** Flutter 3.45+ 업그레이드 시 자동 해결 여부 확인
 2. 빌드 pre-script로 자동 sed 변환 추가 (`ios/Podfile` post_install 또는 별도 스크립트)
