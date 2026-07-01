@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Base
-  static const Color midnight = Color(0xFF0B132B);
-  static const Color bg0 = Color(0xFF050813); // 더 깊은 블랙 (Whoop 스타일)
-  static const Color bg1 = Color(0xFF0E1322); // 카드 베이스
+  // Base — black + gold 톤 (2026-07-01 남색→검정 전환)
+  static const Color midnight = Color(0xFF0D0D10);
+  static const Color bg0 = Color(0xFF050505); // 거의 순검정, 약간의 뉘앙스
+  static const Color bg1 = Color(0xFF101014); // 카드 베이스
 
-  // Surfaces (gunmetal)
-  static const Color gun1 = Color(0xFF2C2F33);
-  static const Color gun2 = Color(0xFF3A506B);
+  // Surfaces (gunmetal → 뉴트럴 다크)
+  static const Color gun1 = Color(0xFF16161A);
+  static const Color gun2 = Color(0xFF22222A);
 
   // Accents (rose gold)
   static const Color rose1 = Color(0xFFD4A373);
@@ -26,7 +26,7 @@ class AppColors {
   // Glassmorphism overlays
   static const Color glassFill = Color(0x1AFFFFFF); // white @ 10%
   static const Color glassStroke = Color(0x33FFFFFF); // white @ 20%
-  static const Color cardFill = Color(0xCC0E1322); // bg1 @ 80%
+  static const Color cardFill = Color(0xCC101014); // bg1 @ 80%
   static const Color cardStroke = Color(0x1FFFFFFF); // white @ 12%
 
   // Status

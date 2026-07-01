@@ -88,7 +88,7 @@
 | 3 | 디자인 토큰 (색/폰트/테마) 셋업 | ✅ **완료** (2026-06-25) | - |
 | 4 | 인증 화면 (로그인/회원가입) 포팅 + 실 검증 | ✅ **완료** (2026-06-28) | - |
 | 4.5 | Splash 화면 + 진짜 SVG 워드마크 도입 | ✅ **완료** (2026-06-28) | - |
-| **5** | **UI 일괄 (mockup)**: Dashboard / Player Input / Stats / Chat / Coach / Fitter / Trainer 화면을 mock 데이터로 디자인까지 완성 | 🟡 진행 예정 (현 위치) | ~20h |
+| **5** | **UI 일괄 (mockup)**: Dashboard / Player Input / Stats / Chat / Coach / Fitter / Trainer 화면을 mock 데이터로 디자인까지 완성 | 🟡 진행 중 (Welcome 완료, 회원가입 재구성 예정) | ~20h |
 | **6** | **데이터 모델 정의**: Firestore 스키마 그대로 Dart 모델 클래스 (`PlayerRound`, `CalendarEvent`, `CoachLesson`, ...) | ⏳ | ~3h |
 | **7** | **Firestore Repository 일괄 배선**: `currentUserProvider`, 각 도메인 `StreamProvider` → 화면의 mock 데이터를 `ref.watch()` 결과로 교체 | ⏳ | ~6h |
 | 8 | 디바이스 기능: GPS 자동입력 + 카메라 녹화/업로드 + 푸시 알림 | ⏳ | ~6h |
@@ -673,6 +673,96 @@ xcrun simctl launch booted com.syadow.syadow
 ### 트러블슈팅 기록 — 디자인 협업 흐름
 - 초기에 디자인 듣기 전 임의로 splash를 만들었다가 사용자가 "직접 지시할게"라고 함 → 변경분 5개 파일 `git checkout`으로 원복 후 처음부터 재진행.
 - **교훈**: 디자인 요청은 사용자 지시를 끝까지 듣고 시작. 임의 구현 X.
+
+---
+
+## 2026-07-01 — 브랜드 톤 전환 (검정+골드) + Welcome 화면 🎨
+
+> "스플래시가 검정+골드라 훨씬 차분·고급스러워 보인다"는 관찰에서 시작 → 앱 전체 톤을 검정+골드로 통일 → 로그인 진입 화면을 Netflix/Airbnb 스타일 풀블리드 Welcome으로 재구성.
+
+### 1. 컬러 토큰 검정+골드 전환
+[lib/core/theme/app_colors.dart](lib/core/theme/app_colors.dart) — 골드(rose1/rose2), text, glass, role accents 유지. 어두운 뉴트럴 톤으로 재조정:
+- `midnight`: `#0B132B` → `#0D0D10`
+- `bg0`: `#050813` → `#050505`
+- `bg1`: `#0E1322` → `#101014`
+- `gun1`: `#2C2F33` → `#16161A` (뉴트럴 다크)
+- `gun2`: `#3A506B` → `#22222A`
+- `cardFill`: `#CC0E1322` → `#CC101014` (bg1@80% 갱신)
+
+배경 그라데이션(`bgGradient = midnight → bg0`)은 자동으로 새 톤 반영됨.
+
+### 2. 앱 아이콘 재생성 (검정+골드)
+- [tools/build_icon.sh](tools/build_icon.sh) — 배경 그라데이션 재정의:
+  - `BG_TOP: #16161A` → `MIDNIGHT: #0D0D10` → `BG_BOTTOM: #050505` (위 살짝 밝고 아래 순검정)
+  - 로고 메탈릭 골드 그라데이션은 유지
+- [pubspec.yaml](pubspec.yaml) `adaptive_icon_background`: `#0B132B` → `#050505`
+- 실행: `bash tools/build_icon.sh && dart run flutter_launcher_icons` → iOS/Android 전 사이즈 자동 재생성
+
+### 3. Welcome 화면 신규 작성 (풀블리드 4분할)
+파일: [lib/features/auth/presentation/welcome_screen.dart](lib/features/auth/presentation/welcome_screen.dart)
+
+**구조** (Stack 오버레이):
+1. **풀블리드 4분할 그리드** (edge-to-edge, 마진 없음)
+   - 좌상: Golf(rolePlayer) / 우상: Coach(roleCoach)
+   - 좌하: Fitter(roleFitter) / 우하: Trainer(roleTrainer)
+   - 각 quadrant: 역할 색 tint 그라데이션 + 반대편 코너에 큰 배경 아이콘(투명 12%) + 바깥쪽 코너 라벨
+   - **플레이스홀더 상태** — 사용자가 나중에 실사진 4장 주면 `DecoratedBox` → `Image.asset(fit: BoxFit.cover)`로 교체 예정
+2. **Radial vignette** — 화면 가장자리 어둡게 (로고/버튼 가독성)
+3. **중앙 SYADOW 골드 워드마크** — 4개 seam 정확히 정중앙, radial dark backdrop으로 이미지 위에서도 살아남
+4. **하단 CTA 오버레이** — 아래로 갈수록 검정 그라데이션 + SafeArea + 버튼 2개
+   - Primary: **"계정 만들기"** (골드 gradient + glow) → `/signup`
+   - Secondary: **"이미 계정이 있어요"** (glass outlined) → `/login/email`
+
+### 4. 라우터 개편
+[lib/core/router/app_router.dart](lib/core/router/app_router.dart):
+- `/login` → **WelcomeScreen** (신규)
+- `/login/email` → **LoginScreen** (기존 이메일 폼, 재활용)
+- `/signup` → SignupScreen (기존)
+- `atAuth` 검사에 `/login/email` 추가
+- redirect 로직 그대로 (loggedIn ↔ atAuth 스위칭)
+
+### 5. i18n 신규 키 (en/ja/ko 3언어 동시)
+- `welcomeIHaveAccount` — "이미 계정이 있어요" / "I already have an account" / "すでにアカウントをお持ちの方"
+- `welcomeTileGolf` — "골프" / "Golf" / "ゴルフ"
+- `welcomeTileCoach` — "코칭" / "Coaching" / "コーチング"
+- `welcomeTileFitter` — "피팅" / "Fitting" / "フィッティング"
+- `welcomeTileTrainer` — "트레이닝" / "Training" / "トレーニング"
+
+### 6. Repo Memory 신규 (2개)
+- `/memories/repo/web-app-parity.md` — 웹(`~/haru-syadow-platform`)↔앱 로직/구조 이식 원칙
+  - 웹 페이지 참조, Firestore 스키마 공유, Rules 공유 주의(프로젝트당 1개 → 웹 레포에서 수정·배포), sy_code 이미 이식됨
+- `/memories/repo/subscription-policy.md` — **Netflix 패턴**: 앱 내 결제 UI/버튼 없음
+  - 결제는 웹에서만 (Lemon Squeezy), Apple IAP 미사용, "구독 필요" 안내만, Apple Guideline 3.1.1 회피, TestFlight 심사에서 검증
+
+### 7. iOS 빌드 — Package.swift 13.0 회귀 재발 (매번 반복)
+매 세션 반복되는 이슈. 워크어라운드:
+```bash
+sed -i '' 's/.iOS("13.0")/.iOS("15.0")/g' ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+flutter build ios --simulator --debug
+```
+
+### 검증
+- ✅ `flutter analyze` → No issues
+- ✅ iOS 시뮬레이터 빌드 성공 (16.1s)
+- ✅ 스플래시 → Welcome(검정 배경 + 4분할 + 중앙 골드 로고 + 하단 골드/glass 버튼) 정상 렌더
+- ✅ "계정 만들기" → /signup, "이미 계정이 있어요" → /login/email 라우팅 정상
+- ⏳ 실사진 4장 (Golf/Coaching/Fitting/Training) — 사용자가 나중에 제공, 오면 `_RoleQuadrant` 교체
+
+### 결정 사항 (내일 회원가입 화면에 반영)
+- **소셜 로그인 우선** (Apple + Google) — 웹처럼 이메일/비번을 primary로 두지 않음
+- **Apple Guideline 4.8**: iOS에 Google 있으면 Apple Sign-In **필수**
+- **2단계 온보딩**: Step 1 인증(소셜) → Step 2 SYADOW 프로필(역할 + 이름 최소만) → Home
+- Firestore 스키마의 `profileCompleted` 필드 활용 (false → true 전환)
+- 이메일/비번은 fallback으로 유지 (웹 유저 앱 로그인용), UI에서 작게만 노출
+
+### 다음 (2026-07-02 — 회원가입 화면 재구성)
+1. Firebase Console — Apple/Google Auth 프로바이더 활성화 (사용자 직접)
+2. Apple Developer — Sign in with Apple capability 추가
+3. `flutter pub add sign_in_with_apple google_sign_in`
+4. `auth_service.dart`에 `signInWithApple` / `signInWithGoogle` 추가
+5. Welcome 화면 하단 버튼 재구성 (Apple + Google + 이메일 텍스트 링크)
+6. Step 2 프로필 화면 신규 — 역할 카드 4개 + 이름(pre-fill) + `sy_code` 생성 + `profileCompleted: true`
+7. 기존 [signup_screen.dart](lib/features/auth/presentation/signup_screen.dart)는 이메일 가입 폼으로 축소 (또는 Step 2와 통합)
 
 ---
 

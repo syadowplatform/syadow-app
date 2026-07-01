@@ -21,6 +21,12 @@
   "noAccountQuestion": "アカウントをお持ちでない方",
   "comingSoon": "近日対応予定",
 
+  "welcomeIHaveAccount": "すでにアカウントをお持ちの方",
+  "welcomeTileGolf": "ゴルフ",
+  "welcomeTileCoach": "コーチング",
+  "welcomeTileFitter": "フィッティング",
+  "welcomeTileTrainer": "トレーニング",
+
   "validatorEmailRequired": "メールアドレスを入力してください",
   "validatorEmailInvalid": "メールアドレスの形式が正しくありません",
   "validatorPasswordRequired": "パスワードを入力してください",

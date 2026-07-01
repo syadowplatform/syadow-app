@@ -60,6 +60,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoon => 'Coming soon';
 
   @override
+  String get welcomeIHaveAccount => 'I already have an account';
+
+  @override
+  String get welcomeTileGolf => 'Golf';
+
+  @override
+  String get welcomeTileCoach => 'Coaching';
+
+  @override
+  String get welcomeTileFitter => 'Fitting';
+
+  @override
+  String get welcomeTileTrainer => 'Training';
+
+  @override
   String get validatorEmailRequired => 'Please enter your email';
 
   @override

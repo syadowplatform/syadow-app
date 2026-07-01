@@ -60,6 +60,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get comingSoon => '준비 중입니다';
 
   @override
+  String get welcomeIHaveAccount => '이미 계정이 있어요';
+
+  @override
+  String get welcomeTileGolf => '골프';
+
+  @override
+  String get welcomeTileCoach => '코칭';
+
+  @override
+  String get welcomeTileFitter => '피팅';
+
+  @override
+  String get welcomeTileTrainer => '트레이닝';
+
+  @override
   String get validatorEmailRequired => '이메일을 입력하세요';
 
   @override

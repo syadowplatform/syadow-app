@@ -14,12 +14,14 @@ trap "rm -rf $TMP" EXIT
 
 mkdir -p "$OUT_DIR"
 
-# 디자인 토큰 (AppColors와 동일)
-MIDNIGHT="#0B132B"
+# 디자인 토큰 (AppColors와 동일) — 2026-07-01 검정+골드 톤 전환
+MIDNIGHT="#0D0D10"
+BG_TOP="#16161A"
+BG_BOTTOM="#050505"
 GOLD_DARK="#8B6B4A"
 GOLD_MAIN="#D4A373"
 GOLD_LIGHT="#F4D29F"
-LOGO_COLOR="$GOLD_MAIN"   # 골드 단색 (보더와 톤 일치, midnight 배경 위에서 잘 보임)
+LOGO_COLOR="$GOLD_MAIN"   # 골드 단색 (검정 배경 위에서 잘 보임)
 
 SIZE=1024
 BORDER=32
@@ -39,11 +41,11 @@ LOGO_Y=$(python3 -c "print(round(($SIZE - $LOGO_H) / 2, 2))")
 cat > "$TMP/icon.svg" <<SVG
 <svg xmlns="http://www.w3.org/2000/svg" width="$SIZE" height="$SIZE" viewBox="0 0 $SIZE $SIZE">
   <defs>
-    <!-- 배경: 깊이감 그라데이션 (위 밝음 → 아래 어두움) -->
+    <!-- 배경: 깊이감 그라데이션 (위 살짝 밝음 → 아래 순검정) -->
     <linearGradient id="bgGrad" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%"   stop-color="#1A2342"/>
+      <stop offset="0%"   stop-color="$BG_TOP"/>
       <stop offset="55%"  stop-color="$MIDNIGHT"/>
-      <stop offset="100%" stop-color="#050813"/>
+      <stop offset="100%" stop-color="$BG_BOTTOM"/>
     </linearGradient>
 
     <!-- 로고: 메탈릭 골드 그라데이션 (어두운 골드 → 메인 → 밝은 골드 → 메인) -->

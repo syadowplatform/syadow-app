@@ -60,6 +60,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get comingSoon => '近日対応予定';
 
   @override
+  String get welcomeIHaveAccount => 'すでにアカウントをお持ちの方';
+
+  @override
+  String get welcomeTileGolf => 'ゴルフ';
+
+  @override
+  String get welcomeTileCoach => 'コーチング';
+
+  @override
+  String get welcomeTileFitter => 'フィッティング';
+
+  @override
+  String get welcomeTileTrainer => 'トレーニング';
+
+  @override
   String get validatorEmailRequired => 'メールアドレスを入力してください';
 
   @override

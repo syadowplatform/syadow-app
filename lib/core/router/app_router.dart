@@ -6,6 +6,7 @@ import '../../features/auth/application/auth_providers.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
+import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/player/presentation/player_home_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -21,7 +22,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // 인증 상태 로딩 중이면 그대로 둠.
       if (authAsync.isLoading) return null;
       final loggedIn = authAsync.value != null;
-      final atAuth = loc == '/login' || loc == '/signup';
+      final atAuth =
+          loc == '/login' || loc == '/login/email' || loc == '/signup';
 
       if (!loggedIn && !atAuth) return '/login';
       if (loggedIn && atAuth) return '/home';
@@ -29,7 +31,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: '/login/email',
+        builder: (context, state) => const LoginScreen(),
+      ),
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),

@@ -202,6 +202,36 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get comingSoon;
 
+  /// No description provided for @welcomeIHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'I already have an account'**
+  String get welcomeIHaveAccount;
+
+  /// No description provided for @welcomeTileGolf.
+  ///
+  /// In en, this message translates to:
+  /// **'Golf'**
+  String get welcomeTileGolf;
+
+  /// No description provided for @welcomeTileCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Coaching'**
+  String get welcomeTileCoach;
+
+  /// No description provided for @welcomeTileFitter.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitting'**
+  String get welcomeTileFitter;
+
+  /// No description provided for @welcomeTileTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get welcomeTileTrainer;
+
   /// No description provided for @validatorEmailRequired.
   ///
   /// In en, this message translates to:

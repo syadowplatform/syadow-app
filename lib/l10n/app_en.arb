@@ -21,6 +21,12 @@
   "noAccountQuestion": "Don't have an account?",
   "comingSoon": "Coming soon",
 
+  "welcomeIHaveAccount": "I already have an account",
+  "welcomeTileGolf": "Golf",
+  "welcomeTileCoach": "Coaching",
+  "welcomeTileFitter": "Fitting",
+  "welcomeTileTrainer": "Training",
+
   "validatorEmailRequired": "Please enter your email",
   "validatorEmailInvalid": "Invalid email format",
   "validatorPasswordRequired": "Please enter your password",
