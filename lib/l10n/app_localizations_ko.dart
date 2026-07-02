@@ -54,6 +54,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get continueWithGoogle => 'Google로 계속하기';
 
   @override
+  String get continueWithEmail => '이메일로 계속하기';
+
+  @override
   String get noAccountQuestion => '계정이 없으신가요?';
 
   @override

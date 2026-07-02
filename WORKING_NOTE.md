@@ -88,7 +88,7 @@
 | 3 | 디자인 토큰 (색/폰트/테마) 셋업 | ✅ **완료** (2026-06-25) | - |
 | 4 | 인증 화면 (로그인/회원가입) 포팅 + 실 검증 | ✅ **완료** (2026-06-28) | - |
 | 4.5 | Splash 화면 + 진짜 SVG 워드마크 도입 | ✅ **완료** (2026-06-28) | - |
-| **5** | **UI 일괄 (mockup)**: Dashboard / Player Input / Stats / Chat / Coach / Fitter / Trainer 화면을 mock 데이터로 디자인까지 완성 | 🟡 진행 중 (Welcome 완료, 회원가입 재구성 예정) | ~20h |
+| **5** | **UI 일괄 (mockup)**: Dashboard / Player Input / Stats / Chat / Coach / Fitter / Trainer 화면을 mock 데이터로 디자인까지 완성 | 🟡 진행 중 (Welcome 3-stage 완료, **Player Input 3화면 완료**, 나머지 대기) | ~20h |
 | **6** | **데이터 모델 정의**: Firestore 스키마 그대로 Dart 모델 클래스 (`PlayerRound`, `CalendarEvent`, `CoachLesson`, ...) | ⏳ | ~3h |
 | **7** | **Firestore Repository 일괄 배선**: `currentUserProvider`, 각 도메인 `StreamProvider` → 화면의 mock 데이터를 `ref.watch()` 결과로 교체 | ⏳ | ~6h |
 | 8 | 디바이스 기능: GPS 자동입력 + 카메라 녹화/업로드 + 푸시 알림 | ⏳ | ~6h |
@@ -763,6 +763,184 @@ flutter build ios --simulator --debug
 5. Welcome 화면 하단 버튼 재구성 (Apple + Google + 이메일 텍스트 링크)
 6. Step 2 프로필 화면 신규 — 역할 카드 4개 + 이름(pre-fill) + `sy_code` 생성 + `profileCompleted: true`
 7. 기존 [signup_screen.dart](lib/features/auth/presentation/signup_screen.dart)는 이메일 가입 폼으로 축소 (또는 Step 2와 통합)
+
+---
+
+## 2026-07-02 — Welcome CTA 소셜 로그인 UI 재구성 🎨
+
+> 전략 재확인: **"UI를 다 짜놓고 마지막에 연결"** — Firebase Console / Apple Developer 설정을 blocker로 두지 않고, 소셜 로그인 버튼도 일단 UI만 완성. Phase 6에서 실 SDK 배선.
+
+### 결정 사항 (진입 흐름 UX)
+- Welcome 하단 CTA 3단 구조: **Apple 버튼 + Google 버튼 + "이메일로 계속" 텍스트 링크**
+  - Netflix/Airbnb 패턴 — primary 2개(소셜) + secondary 1개(웹 유저용 이메일)
+  - "회원가입/로그인" 구분 제거 (소셜은 가입=로그인이 한 액션)
+  - Apple Guideline 4.8 준수 (Google 있으면 Apple 필수)
+- 이메일 링크 → 기존 `/login/email` 재활용, 그 안에서 하단 "계정 만들기" 링크로 `/signup` 이동 (기존 흐름 유지)
+- **3가지 진입 경로가 모두 같은 지점으로 수렴**:
+  - Apple/Google 신규 → Step 2 프로필 설정 (역할+이름+sy_code)
+  - Apple/Google 기존 → `/home`
+  - 이메일 로그인(웹 유저) → `/home` (웹에서 이미 profileCompleted:true)
+  - 이메일 신규 가입 → 기존 signup_screen (한 폼에서 역할까지)
+- 판별 키: Firestore `users/{uid}.profileCompleted` — 라우터 redirect에서 강제 분기
+
+### 작성/수정한 파일
+- [lib/l10n/app_en.arb](lib/l10n/app_en.arb), [app_ja.arb](lib/l10n/app_ja.arb), [app_ko.arb](lib/l10n/app_ko.arb) — `continueWithEmail` 키 추가 (en/ja/ko 3언어)
+  - `continueWithApple`, `continueWithGoogle`는 이미 존재해서 그대로 재활용
+- [lib/features/auth/presentation/welcome_screen.dart](lib/features/auth/presentation/welcome_screen.dart) — 하단 CTA 재구성
+  - 기존 `_PrimaryButton`(계정 만들기) / `_SecondaryButton`(이미 계정이 있어요) **제거**
+  - 신규 `_AppleButton` — 검정 배경 + `Icons.apple` + 흰 텍스트 (높이 54, radius 14, shadow)
+  - 신규 `_GoogleButton` — 화이트 배경 + `_GoogleGLogo` + 다크 텍스트
+  - 신규 `_GoogleGLogo` — **플레이스홀더**: `SweepGradient`(4색 파/녹/노/빨) 링 + 흰 원 + 파란 G 텍스트. 실 SDK 배선 시 공식 SVG 자산으로 교체 필요
+  - 신규 `_EmailTextLink` — muted 색상 언더라인 텍스트 링크
+  - `onPressed`는 Apple/Google 둘 다 빈 함수 + TODO 주석 (Phase 6에서 배선)
+
+### 검증
+- ✅ `flutter pub get` 후 l10n 자동 재생성 성공
+- ✅ `flutter analyze` → No issues found (1.9s)
+- ⏳ 시뮬레이터 시각 검증 — 다음 hot reload 때
+
+### 미완료 (일부러 미룸 — UI-first 전략)
+- Apple/Google 실 SDK 배선 (`sign_in_with_apple`, `google_sign_in` 패키지 미추가)
+- Firebase Console Apple/Google 프로바이더 활성화 (사용자 직접, 미완)
+- Apple Developer Sign in with Apple capability (사용자 직접, 미완)
+- Step 2 프로필 설정 화면 신규 작성
+- 라우터 `profileCompleted` 기반 redirect 확장
+- 기존 SignupScreen 톤 정리 (검정+골드 브랜드 반영)
+
+### 다음 UI 작업 후보 (사용자 판단)
+- Step 2 프로필 설정 화면 (Apple/Google 신규 유입 후 진입할 화면)
+- LoginScreen / SignupScreen 톤 정리
+- 또는 워킹노트 Phase 5 표의 Player/Coach/Fitter/Trainer 화면들로 바로 진입
+
+---
+
+## 2026-07-02 (저녁) — Player Input Phase 5 화면 완성 + Welcome 3단 흐름 재설계 + 로컬 폰트 전환 🎉
+
+> UI-first 전략 첫 대규모 이행 — 웹 `player-input.html/js` 스키마 100% 호환 도메인부터 3단계 스크린까지 한번에 구축. 진입 흐름은 사용자 지시대로 인라인 3-stage로 재설계. 성능 이슈 진단하며 폰트 로컬 번들 전환.
+
+### 1. Player Input 대규모 UI 구축 (Phase 5 첫 화면 완료)
+
+**설계 결정** (사용자 지시 반영):
+- ❌ 라운드 "시작" 개념 없음 (선수는 라운드 중 폰 사용 불가) → **"라운드 후 앉아서 입력"** 단일 흐름
+- ❌ 실시간 GPS 트래킹 없음 (샷별 위치, 거리 자동 측정 안 함)
+- ✅ 스탯 입력은 **웹과 비슷하게** (shot: distance/wind/club/position/direction, putt: step)
+- ✅ 모바일 UX 최적화: 홀 1개 = 화면 1개 (PageView 스와이프)
+- ✅ 웹 `holes/{F1..B9}` 스키마와 100% 호환 (Firestore doc 공유)
+
+**도메인 모델** (5개 클래스, Firestore 스키마 그대로):
+- [lib/features/player/domain/golf_constants.dart](lib/features/player/domain/golf_constants.dart)
+  - Enum: `RoundMode`, `TeeTime`, `PlayOrder`, `HoleCount`, `Weather`, `TempUnit`, `Grass`, `ShotPosition` (11종 FW/OG/HO/RH/SH/BK/WH/TS/DZ/OB/LB), `DirectionMode`
+  - 상수: `TempRangeOptions`, `PinGridCodes` (3×3), `DirectionArrows`, `WindClock`, `Clubs` (전체 23종 + 웹 `normalizeClub` 로직 이식), `HoleIds` (front/back/ordered)
+- [lib/features/player/domain/hole_data.dart](lib/features/player/domain/hole_data.dart) — `Shot`, `Putt`, `HoleEntry`
+  - `autoScore` (샷+퍼트+페널티+tapIn), `gir` (par-2 이내 OG/HO), `valid` (HO/OG+퍼트 규칙) 자동 계산
+  - `toFirestore()` 웹 스키마와 동일 필드명
+- [lib/features/player/domain/player_round.dart](lib/features/player/domain/player_round.dart) — `RoundMeta`, `RoundNotes`, `ScoreSummary`, `PlayerRound`
+  - `RoundMeta.toFirestore()` 는 웹 `payload.meta`와 동일한 필드 (fairwayGrassNote 포함)
+
+**Data + State**:
+- [lib/features/player/data/player_round_repository.dart](lib/features/player/data/player_round_repository.dart) — abstract `PlayerRoundRepository` + `MockPlayerRoundRepository` (Phase 7에서 Firestore 구현 추가)
+- [lib/features/player/application/round_input_controller.dart](lib/features/player/application/round_input_controller.dart) — Riverpod 3.x `Notifier<RoundDraft>` (모든 화면이 이 provider 공유)
+
+**위젯**:
+- [round_input_pickers.dart](lib/features/player/presentation/widgets/round_input_pickers.dart) — Pin 9-grid / Direction (9/3/grid 모드) / Wind clock 12시 방향 → 모두 `showModalBottomSheet`로 (웹 팝업의 모바일 대응)
+- [shot_block.dart](lib/features/player/presentation/widgets/shot_block.dart) — 웹 `.shot-block` 그대로 5필드(Distance/Wind/Club/Position/Direction), Club은 `RawAutocomplete<String>`
+- [putt_block.dart](lib/features/player/presentation/widgets/putt_block.dart) — Step 필드 하나
+
+**화면 3개**:
+- [round_input_meta_screen.dart](lib/features/player/presentation/round_input_meta_screen.dart) — Play Info(모드/투어명/날짜/코스/티오프/홀수/순서), Weather(날씨/온도단위/온도범위/바람), Grass(접힘, 페어웨이/러프/그린 + mix 지원)
+- [round_input_holes_screen.dart](lib/features/player/presentation/round_input_holes_screen.dart) — PageView 스와이프. 홀당 카드: Par(3/4/5 탭), Pin 선택, Shot 리스트+추가, Putt 리스트+추가, Tap-In 스위치, Penalty 숫자, 자동 스코어(파대비 컬러 라벨: 이글/버디/파/보기/더블)
+- [round_input_summary_screen.dart](lib/features/player/presentation/round_input_summary_screen.dart) — Front9/Back9/Total 스코어카드, 메타 요약, 홀별 컬러 그리드, Notes 4개(swing/short/putting/mind), 스코어카드 사진 placeholder, 라운드 저장 → mock repo → `/home`
+
+**라우터**:
+- `/player/input/new` (Meta) / `/player/input/holes` (Holes) / `/player/input/summary` (Summary) 3개 추가
+- Player Home 하단 네비 `+ 입력` (index 2) → `context.push('/player/input/new')`
+
+### 2. Welcome 진입 흐름 3-stage 재설계 (사용자 지시)
+
+**이전**: Welcome → Apple/Google/이메일 3버튼 (Netflix식 통합) → 이메일은 별도 화면
+**변경 후**: Welcome → `계정 있음?/없음?` 선택 → 방식 선택 (Apple/Google/이메일) → 이메일은 인라인 폼 (로그인 흐름만)
+
+**Stage 1** (initial): `계정 만들기` (골드) / `이미 계정 있어요` (glass) 2 CTA
+**Stage 2** (authMethods): 뒤로 링크 + `가입/로그인 방식 선택` 문구 + Apple/Google + 이메일 링크
+**Stage 3** (signinEmail): 뒤로 링크 + 이메일/비번 인라인 폼 + 자동 포커스
+
+**결정**:
+- 이메일 **로그인**은 인라인 (심플, 이메일+비번만) — Welcome 위에서 바로 폼 열림
+- 이메일 **가입**은 별도 `/signup` 화면으로 이동 (역할 4카드 등 복잡, 인라인 부적합)
+- 각 stage 전환: `AnimatedSize` + `AnimatedSwitcher` (fade + slide 220~280ms), 로고는 stage 깊어질수록 살짝 위+축소, Vignette 어두워짐
+
+**파일**: [welcome_screen.dart](lib/features/auth/presentation/welcome_screen.dart) 대규모 리팩터 (내부 `enum _Stage`/`enum _Mode` + `_BottomActions` ConsumerStatefulWidget로 폼 상태 통합 관리). 기존 `/login/email` 라우트는 그대로 유지 (딥링크 백업).
+
+### 3. `google_fonts` → 로컬 번들 폰트 전환 (성능 개선)
+
+**증상**: 시뮬레이터에서 렉 감지 → 진단 결과 `GoogleFonts.orbitron()` 호출 8곳이 Google 서버에서 매번 폰트 다운로드/캐시 조회 → 첫 실행 시 재렌더 폭탄.
+
+**해결**:
+- `tools/fonts/Orbitron-Variable.ttf` → `assets/fonts/Orbitron-Variable.ttf` 복사 (Variable 폰트 → weight 100~900 모두 지원)
+- `pubspec.yaml`에 `fonts:` 섹션 추가 (family=Orbitron)
+- [app_text_styles.dart](lib/core/theme/app_text_styles.dart) — `GoogleFonts.orbitron(...)` → `TextStyle(fontFamily: 'Orbitron', ...)`
+- `google_fonts` 패키지는 pubspec에는 남아있지만 코드에서 미사용 (다음 정리 세션에 제거해도 OK)
+
+**렉의 진짜 원인 정리**:
+| 원인 | 심각도 | 해결 |
+|---|---|---|
+| Flutter debug 모드 자체 | 🔴 큼 (2~5배 느림) | 시뮬레이터는 debug만 지원 — 실기기 릴리즈는 훨씬 부드러움 |
+| google_fonts 런타임 fetch | 🟡 중 | ✅ 이번 세션에 해결 |
+| Welcome 다중 애니메이션 동시 발생 | 🟢 소 | 릴리즈에서는 부드러움 |
+| BackdropFilter blur | 🟢 없음 | `GlassCard` 선언만 있고 실사용 X |
+
+⚠️ **iOS 시뮬레이터는 오직 `debug` 빌드만 지원** — `flutter build ios --simulator --profile/--release` 둘 다 "not supported" 에러. 릴리즈 성능은 실기기 or Android 릴리즈 빌드로 검증 필요.
+
+### 4. 라운드 입력 흐름 뒤로가기 버그 수정
+
+**증상**: 사용자 보고 — "홀별입력을 누르고 뒤로가기를 누르면 화면이 안 보임"
+
+**원인**: `context.go`(라우트 대체) + `Navigator.pop`(빈 스택 pop) 혼용 → 뒤로 갔을 때 실제로는 아무 화면도 없음.
+
+**수정**: 라운드 입력 흐름 전체를 `context.push`(스택 추가) + `context.pop()` fallback `/home`으로 통일:
+| 위치 | Before | After |
+|---|---|---|
+| Home → 입력 진입 | `go` | `push` |
+| Meta → 홀별 입력으로 | `go` | `push` |
+| Holes → 요약으로/요약 shortcut | `go` | `push` |
+| Meta/Holes/Summary 뒤로 | `Navigator.pop()` or `go` | `context.pop()` fallback `/home` |
+| Summary → 라운드 저장 성공 | `go('/home')` | 유지 (스택 리셋) |
+
+### 5. Package.swift 13.0 회귀 (매번 반복)
+
+이번에도 재발. 워킹노트 워크어라운드 순서대로 처리:
+```bash
+flutter clean && flutter pub get
+sed -i '' 's/.iOS("13.0")/.iOS("15.0")/g' ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+flutter build ios --simulator --debug
+```
+
+### 검증
+
+- ✅ `flutter analyze` → No issues
+- ✅ iOS 시뮬레이터 빌드 성공 (약 16초, Orbitron 로컬 번들 포함)
+- ✅ Welcome 3-stage 애니메이션 정상 동작
+- ✅ 이메일 로그인 흐름 (인라인 폼) 실 Firebase Auth 연동 유지
+- ✅ 라운드 입력 3단계 흐름 → 뒤로가기/스와이프 정상 동작
+- ⏳ 실 데이터 저장 → **Mock repo만 동작 (Phase 7에서 Firestore 교체 예정)**
+
+### 미완료 (의도적 — UI-first 원칙)
+
+- Apple/Google 실 SDK 배선 (Phase 6)
+- Firestore 실 저장 로직 (Phase 7)
+- 스코어카드 사진 첨부 (카메라 SDK 미연결, placeholder만)
+- 드래프트 자동 저장 (`shared_preferences` 활용 예정)
+- Player Input 화면 i18n 이관 (지금 한국어 하드코딩)
+- `ShotPosition` 라벨 재검토 (RH/SH/TS/LB 등 임시 한국어 — 사용자 확인 필요)
+
+### 다음 세션 확정 사항 (사용자 피드백 대기 중)
+
+1. **Player Input 시뮬레이터 시험** — 3단계 흐름 사용성 피드백
+   - 홀별 페이지 세로 스크롤 길이 (샷 여러 개 시 길어짐)
+   - Position 드롭다운 라벨 (RH/SH/TS/DZ/LB의 정확한 한국어 확인)
+   - Shot 블럭 밀도 (지금 5필드 세로 5줄 — 컴팩트하게 줄일지)
+   - Par 기본값 (지금 모든 홀 4로 통일 — 프리셋 필요할지)
+2. **다음 UI 화면** 선택 — 워킹노트 Phase 5 표 참조 (Player Stats / Chat / Coach / Fitter / Trainer / Connections / Profile)
 
 ---
 

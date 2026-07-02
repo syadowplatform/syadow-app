@@ -54,6 +54,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get continueWithGoogle => 'Googleで続ける';
 
   @override
+  String get continueWithEmail => 'メールで続ける';
+
+  @override
   String get noAccountQuestion => 'アカウントをお持ちでない方';
 
   @override

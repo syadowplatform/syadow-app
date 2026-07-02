@@ -8,6 +8,9 @@ import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/player/presentation/player_home_screen.dart';
+import '../../features/player/presentation/round_input_holes_screen.dart';
+import '../../features/player/presentation/round_input_meta_screen.dart';
+import '../../features/player/presentation/round_input_summary_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -46,6 +49,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (context, state) => const PlayerHomeScreen(),
+      ),
+      GoRoute(
+        path: '/player/input/new',
+        builder: (context, state) => const RoundInputMetaScreen(),
+      ),
+      GoRoute(
+        path: '/player/input/holes',
+        builder: (context, state) => const RoundInputHolesScreen(),
+      ),
+      GoRoute(
+        path: '/player/input/summary',
+        builder: (context, state) => const RoundInputSummaryScreen(),
       ),
     ],
   );

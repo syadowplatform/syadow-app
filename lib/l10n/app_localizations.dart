@@ -190,6 +190,12 @@ abstract class AppLocalizations {
   /// **'Continue with Google'**
   String get continueWithGoogle;
 
+  /// No description provided for @continueWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get continueWithEmail;
+
   /// No description provided for @noAccountQuestion.
   ///
   /// In en, this message translates to:

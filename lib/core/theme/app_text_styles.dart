@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
 /// SYADOW 텍스트 스타일.
-/// - 브랜드/타이틀: Orbitron (google_fonts에서 런타임 로딩)
+/// - 브랜드/타이틀: Orbitron (로컬 번들 폰트, `assets/fonts/Orbitron-Variable.ttf`)
 /// - 본문: 시스템 폰트 (iOS=SF Pro, Android=Roboto) — Flutter 기본값
 class AppTextStyles {
   AppTextStyles._();
 
+  /// 로컬에 번들된 Orbitron. Variable 폰트라 weight 100~900을 지원.
+  static const String _brandFamily = 'Orbitron';
+
   /// 브랜드 워드마크 ("SYADOW" 로고) — Orbitron 900
-  static TextStyle brand({double size = 28, Color? color}) =>
-      GoogleFonts.orbitron(
-        fontSize: size,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 2.0,
-        color: color ?? AppColors.text,
-      );
+  static TextStyle brand({double size = 28, Color? color}) => TextStyle(
+    fontFamily: _brandFamily,
+    fontSize: size,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 2.0,
+    color: color ?? AppColors.text,
+  );
 
   /// 섹션 타이틀 — Orbitron 700
-  static TextStyle sectionTitle({double size = 20, Color? color}) =>
-      GoogleFonts.orbitron(
-        fontSize: size,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.2,
-        color: color ?? AppColors.text,
-      );
+  static TextStyle sectionTitle({double size = 20, Color? color}) => TextStyle(
+    fontFamily: _brandFamily,
+    fontSize: size,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.2,
+    color: color ?? AppColors.text,
+  );
 
   static TextTheme get textTheme => const TextTheme(
     displayLarge: TextStyle(

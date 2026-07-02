@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -66,7 +67,13 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
             child: SyadowBottomNav(
               items: _navItems,
               currentIndex: _tab,
-              onTap: (i) => setState(() => _tab = i),
+              onTap: (i) {
+                if (i == 2) {
+                  context.push('/player/input/new');
+                  return;
+                }
+                setState(() => _tab = i);
+              },
             ),
           ),
         ],
